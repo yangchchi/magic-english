@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore, useSettings } from '@/stores/useAppStore';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
-import { InstallPrompt } from '@/components/common';
+import { InstallPrompt, Icon } from '@/components/common';
 import { db } from '@/db';
 import styles from './SettingsPage.module.css';
 
@@ -47,7 +47,7 @@ const Toggle: React.FC<ToggleProps> = ({ checked, onChange, disabled }) => (
     >
         <motion.div
             className={styles.toggleThumb}
-            animate={{ x: checked ? 20 : 0 }}
+            animate={{ x: checked ? 22 : 0 }}
             transition={{ type: 'spring', stiffness: 500, damping: 30 }}
         />
     </button>
@@ -197,10 +197,12 @@ const SettingsPage: React.FC = () => {
                 <motion.button
                     className={styles.backBtn}
                     onClick={() => navigate(-1)}
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.94 }}
+                    aria-label="返回"
+                    type="button"
                 >
-                    ←
+                    <Icon name="chevron-left" size={22} strokeWidth={2.25} />
                 </motion.button>
                 <h1 className={styles.title}>设置</h1>
                 <div className={styles.placeholder} />

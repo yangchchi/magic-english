@@ -1,10 +1,9 @@
 /**
- * Modal 组件样式
+ * Modal 组件样式 — Apple HIG / Glass
  */
 
 .overlay {
   position: fixed;
-  /* 兼容旧浏览器 */
   top: 0;
   right: 0;
   bottom: 0;
@@ -13,9 +12,11 @@
   align-items: center;
   justify-content: center;
   background: var(--bg-overlay);
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
   z-index: var(--z-modal-backdrop);
   padding: var(--space-4);
+  animation: fadeIn var(--duration-base) var(--ease-apple);
 }
 
 .modal {
@@ -24,11 +25,15 @@
   flex-direction: column;
   max-height: calc(100vh - var(--space-8));
   max-height: calc(100dvh - var(--space-8));
-  background: var(--bg-card);
-  border-radius: var(--radius-2xl);
-  box-shadow: var(--shadow-2xl);
+  background: var(--glass-bg-panel);
+  backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-3xl);
+  box-shadow: var(--shadow-2xl), var(--glass-highlight);
   overflow: hidden;
   z-index: var(--z-modal);
+  animation: scaleIn var(--duration-slow) var(--ease-spring);
 }
 
 /* ============ 尺寸 ============ */
@@ -53,7 +58,7 @@
   max-width: none;
   height: calc(100vh - var(--space-8));
   height: calc(100dvh - var(--space-8));
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-2xl);
 }
 
 /* ============ 头部 ============ */
@@ -62,44 +67,53 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-4) var(--space-5);
-  border-bottom: 1px solid var(--border-light);
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--glass-border-soft);
 }
 
 .title {
   font-family: var(--font-display);
   font-size: var(--text-lg);
   font-weight: var(--font-bold);
-  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+  color: var(--text-light);
   margin: 0;
 }
 
 .closeBtn {
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: var(--text-lg);
-  color: var(--text-secondary);
-  background: transparent;
-  border: none;
+  color: var(--text-muted);
+  background: var(--glass-bg-soft);
+  border: 1px solid var(--glass-border-soft);
   border-radius: var(--radius-full);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    transform var(--transition-fast);
 }
 
 .closeBtn:hover {
-  color: var(--text-primary);
-  background: var(--border-light);
+  color: var(--text-light);
+  background: var(--glass-bg);
+}
+
+.closeBtn:active {
+  transform: scale(0.94);
 }
 
 /* ============ 内容 ============ */
 
 .content {
   flex: 1;
-  padding: var(--space-5);
+  padding: var(--space-6);
   overflow-y: auto;
+  color: var(--text-light);
 }
 
 /* ============ 底部 ============ */
@@ -109,36 +123,34 @@
   align-items: center;
   justify-content: flex-end;
   gap: var(--space-3);
-  padding: var(--space-4) var(--space-5);
-  border-top: 1px solid var(--border-light);
+  padding: var(--space-4) var(--space-6);
+  border-top: 1px solid var(--glass-border-soft);
+  background: rgba(255, 255, 255, 0.03);
 }
 
-/* ============ 暗色模式 ============ */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 
-@media (prefers-color-scheme: dark) {
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
   .modal {
-    background: var(--bg-card-dark);
+    animation: none;
   }
 
-  .header {
-    border-bottom-color: var(--border-dark);
-  }
-
-  .title {
-    color: var(--text-light);
-  }
-
-  .closeBtn {
-    color: var(--text-muted);
-  }
-
-  .closeBtn:hover {
-    color: var(--text-light);
-    background: rgba(255, 255, 255, 0.1);
-  }
-
-  .footer {
-    border-top-color: var(--border-dark);
+  .closeBtn:active {
+    transform: none;
   }
 }
-

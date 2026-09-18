@@ -46,6 +46,7 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
   font-weight: var(--font-bold);
   line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
 }
 
 h1 { font-size: var(--text-4xl); }
@@ -176,6 +177,8 @@ ol {
 .rounded-lg { border-radius: var(--radius-lg); }
 .rounded-xl { border-radius: var(--radius-xl); }
 .rounded-2xl { border-radius: var(--radius-2xl); }
+.rounded-3xl { border-radius: var(--radius-3xl); }
+.rounded-4xl { border-radius: var(--radius-4xl); }
 .rounded-full { border-radius: var(--radius-full); }
 
 /* 阴影 */
@@ -183,6 +186,40 @@ ol {
 .shadow-md { box-shadow: var(--shadow-md); }
 .shadow-lg { box-shadow: var(--shadow-lg); }
 .shadow-xl { box-shadow: var(--shadow-xl); }
+.shadow-float { box-shadow: var(--shadow-float); }
+
+/* Glass 材质 */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-strong {
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-dark {
+  background: var(--glass-bg-dark);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border-soft);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-panel {
+  background: var(--glass-bg-panel);
+  backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
 
 /* 尺寸 */
 .w-full { width: 100%; }
@@ -226,7 +263,7 @@ ol {
 @keyframes slideInUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(16px);
   }
   to {
     opacity: 1;
@@ -237,7 +274,7 @@ ol {
 @keyframes slideInDown {
   from {
     opacity: 0;
-    transform: translateY(-20px);
+    transform: translateY(-12px);
   }
   to {
     opacity: 1;
@@ -248,11 +285,22 @@ ol {
 @keyframes scaleIn {
   from {
     opacity: 0;
-    transform: scale(0.9);
+    transform: scale(0.96);
   }
   to {
     opacity: 1;
     transform: scale(1);
+  }
+}
+
+@keyframes sheetIn {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -305,15 +353,30 @@ ol {
 
 /* ============ 动画类 ============ */
 
-.animate-fade-in { animation: fadeIn var(--duration-base) var(--ease-out); }
+.animate-fade-in { animation: fadeIn var(--duration-base) var(--ease-apple); }
 .animate-fade-out { animation: fadeOut var(--duration-base) var(--ease-in); }
-.animate-slide-in-up { animation: slideInUp var(--duration-slow) var(--ease-out); }
-.animate-slide-in-down { animation: slideInDown var(--duration-slow) var(--ease-out); }
-.animate-scale-in { animation: scaleIn var(--duration-slow) var(--ease-out); }
+.animate-slide-in-up { animation: slideInUp var(--duration-slow) var(--ease-spring); }
+.animate-slide-in-down { animation: slideInDown var(--duration-slow) var(--ease-apple); }
+.animate-scale-in { animation: scaleIn var(--duration-slow) var(--ease-spring); }
+.animate-sheet-in { animation: sheetIn var(--duration-slow) var(--ease-spring); }
 .animate-pulse { animation: pulse 2s infinite; }
 .animate-bounce { animation: bounce 1s infinite; }
 .animate-spin { animation: spin 1s linear infinite; }
 .animate-glow { animation: glow 2s infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-fade-out,
+  .animate-slide-in-up,
+  .animate-slide-in-down,
+  .animate-scale-in,
+  .animate-sheet-in,
+  .animate-pulse,
+  .animate-bounce,
+  .animate-glow {
+    animation: none;
+  }
+}
 
 /* ============ 滚动条样式 ============ */
 

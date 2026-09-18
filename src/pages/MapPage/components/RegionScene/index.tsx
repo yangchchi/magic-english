@@ -3,7 +3,7 @@
  * 单个区域的完整场景，包含主题背景、节点路径
  */
 
-import { useMemo, memo } from 'react';
+import { useMemo, memo, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import type { UnifiedMapNode, LevelSection } from '@/data/unifiedMap';
 import { levelThemeColors, nodeTypeStyles, getNodeVisualConfig } from '@/data/unifiedMap';
@@ -33,6 +33,119 @@ const regionConfigs: Record<number, { name: string; nameCn: string; emoji: strin
   7: { name: 'Magic Core', nameCn: '魔力核心', emoji: '💎', bgPattern: 'core' },
 };
 
+/** 流星划过（与首页 MagicBackground 同款） */
+function useMeteorCanvas(
+  canvasRef: React.RefObject<HTMLCanvasElement | null>,
+  enabled: boolean
+) {
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !enabled) return;
+
+    const prefersReduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const parent = canvas.parentElement;
+    const resize = () => {
+      const w = parent?.clientWidth || window.innerWidth;
+      const h = parent?.clientHeight || window.innerHeight;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.floor(w * dpr);
+      canvas.height = Math.floor(h * dpr);
+      canvas.style.width = `${w}px`;
+      canvas.style.height = `${h}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    type Meteor = {
+      x: number;
+      y: number;
+      length: number;
+      speed: number;
+      alpha: number;
+    };
+    const meteors: Meteor[] = [];
+
+    const spawnMeteor = () => {
+      if (meteors.length >= 3) return;
+      // 约每 4–6 秒出现一颗（帧率约 60 时）
+      if (Math.random() > 0.9965) return;
+      const w = parent?.clientWidth || window.innerWidth;
+      meteors.push({
+        x: Math.random() * w * 0.85 + w * 0.05,
+        y: Math.random() * 40 - 10,
+        length: Math.random() * 55 + 40,
+        speed: Math.random() * 2.2 + 6.4,
+        alpha: 1,
+      });
+    };
+
+    let animationId = 0;
+    const animate = () => {
+      const w = parent?.clientWidth || window.innerWidth;
+      const h = parent?.clientHeight || window.innerHeight;
+      ctx.clearRect(0, 0, w, h);
+
+      spawnMeteor();
+
+      for (let i = meteors.length - 1; i >= 0; i--) {
+        const meteor = meteors[i];
+        const tailX = meteor.x - meteor.length * 0.7;
+        const tailY = meteor.y - meteor.length;
+
+        const gradient = ctx.createLinearGradient(
+          meteor.x,
+          meteor.y,
+          tailX,
+          tailY
+        );
+        gradient.addColorStop(0, `rgba(255, 255, 255, ${meteor.alpha})`);
+        gradient.addColorStop(0.45, `rgba(255, 255, 255, ${meteor.alpha * 0.45})`);
+        gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+        ctx.beginPath();
+        ctx.moveTo(meteor.x, meteor.y);
+        ctx.lineTo(tailX, tailY);
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = 1.8;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        // 头部亮点
+        ctx.beginPath();
+        ctx.arc(meteor.x, meteor.y, 1.4, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${meteor.alpha})`;
+        ctx.fill();
+
+        meteor.x += meteor.speed * 0.75;
+        meteor.y += meteor.speed;
+        meteor.alpha -= 0.006;
+
+        if (meteor.alpha <= 0 || meteor.y > h + 40) {
+          meteors.splice(i, 1);
+        }
+      }
+
+      animationId = requestAnimationFrame(animate);
+    };
+
+    animationId = requestAnimationFrame(animate);
+
+    return () => {
+      window.removeEventListener('resize', resize);
+      cancelAnimationFrame(animationId);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    };
+  }, [canvasRef, enabled]);
+}
+
 const RegionScene: React.FC<RegionSceneProps> = memo(({
   section,
   nodes,
@@ -47,6 +160,8 @@ const RegionScene: React.FC<RegionSceneProps> = memo(({
 }) => {
   const themeColors = levelThemeColors[section.level];
   const config = regionConfigs[section.level] || regionConfigs[1];
+  const meteorCanvasRef = useRef<HTMLCanvasElement>(null);
+  useMeteorCanvas(meteorCanvasRef, isActive);
 
   // 生成 S 形路径节点位置（使用固定像素间距）
   const nodePositions = useMemo(() => {
@@ -111,6 +226,18 @@ const RegionScene: React.FC<RegionSceneProps> = memo(({
     return nodes.length > 0 ? completedCount / nodes.length : 0;
   }, [nodes]);
 
+  // 稳定粒子位置
+  const particles = useMemo(
+    () =>
+      Array.from({ length: 20 }, (_, i) => ({
+        left: ((i * 37) % 100) + (i % 5) * 0.4,
+        top: ((i * 53) % 100) + (i % 7) * 0.3,
+        delay: (i % 8) * 0.4,
+        duration: 3 + (i % 5),
+      })),
+    []
+  );
+
   return (
     <div
       className={`${styles.scene} ${isActive ? styles.sceneActive : ''} ${!isUnlocked ? styles.sceneLocked : ''}`}
@@ -124,18 +251,25 @@ const RegionScene: React.FC<RegionSceneProps> = memo(({
       <div className={styles.background}>
         <div className={`${styles.bgPattern} ${styles[`bgPattern_${config.bgPattern}`]}`} />
         <div className={styles.bgGradient} />
+
+        {/* 流星层（同首页） */}
+        <canvas
+          ref={meteorCanvasRef}
+          className={styles.meteorCanvas}
+          aria-hidden
+        />
         
         {/* 装饰元素 */}
         <div className={styles.decorations}>
-          {Array.from({ length: 20 }).map((_, i) => (
+          {particles.map((p, i) => (
             <motion.div
               key={i}
               className={styles.particle}
               style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 5}s`,
-                animationDuration: `${3 + Math.random() * 4}s`,
+                left: `${p.left}%`,
+                top: `${p.top}%`,
+                animationDelay: `${p.delay}s`,
+                animationDuration: `${p.duration}s`,
               }}
             />
           ))}

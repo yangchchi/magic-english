@@ -11,6 +11,7 @@ import { db, type Story } from '@/db';
 import { ttsService } from '@/services/ttsService';
 import { readingProgressService } from '@/services/readingProgressService';
 import { StoryContent, ReaderControls, DictionaryPopup } from '@/components/reader';
+import { Icon } from '@/components/common';
 import styles from './ReaderPage.module.css';
 
 type SpeedOption = 0.8 | 1.0 | 1.2;
@@ -235,8 +236,9 @@ const ReaderPage: React.FC = () => {
     <div className={styles.container}>
       {/* 头部 */}
       <header className={styles.header}>
-        <button className={styles.backBtn} onClick={handleBack}>
-          ← 返回
+        <button className={styles.backBtn} onClick={handleBack} aria-label="返回">
+          <Icon name="chevron-left" size={20} strokeWidth={2.25} className={styles.backIcon} />
+          <span>返回</span>
         </button>
         <h1 className={styles.title}>{story.title}</h1>
         <button className={styles.speedBtn} onClick={() => handleSpeedChange(speed === 1.2 ? 0.8 : speed === 0.8 ? 1.0 : 1.2)}>

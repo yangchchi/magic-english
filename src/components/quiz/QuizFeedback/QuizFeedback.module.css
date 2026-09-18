@@ -1,5 +1,5 @@
 /**
- * QuizFeedback 组件样式
+ * QuizFeedback 组件样式 — Apple HIG / Glass
  */
 
 .container {
@@ -9,28 +9,53 @@
   align-items: center;
   justify-content: center;
   padding: var(--space-8);
-  border-radius: var(--radius-2xl);
+  border-radius: var(--radius-3xl);
   text-align: center;
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: var(--shadow-float), var(--glass-highlight);
+  animation: scaleIn var(--duration-slow) var(--ease-spring);
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .container.correct {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.1) 100%);
-  border: 2px solid var(--color-success);
+  background: linear-gradient(
+    145deg,
+    rgba(78, 205, 196, 0.22) 0%,
+    rgba(78, 205, 196, 0.08) 100%
+  );
+  border: 1px solid rgba(78, 205, 196, 0.4);
 }
 
 .container.wrong {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%);
-  border: 2px solid var(--color-error);
+  background: linear-gradient(
+    145deg,
+    rgba(255, 87, 87, 0.22) 0%,
+    rgba(255, 87, 87, 0.08) 100%
+  );
+  border: 1px solid rgba(255, 87, 87, 0.4);
 }
 
 .icon {
-  font-size: 80px;
+  font-size: 72px;
   margin-bottom: var(--space-4);
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.2));
 }
 
 .title {
   font-size: var(--text-2xl);
   font-weight: var(--font-bold);
+  letter-spacing: var(--tracking-tight);
   margin: 0 0 var(--space-2) 0;
 }
 
@@ -46,13 +71,13 @@
   font-size: var(--text-lg);
   color: var(--text-muted);
   margin: 0;
+  line-height: var(--leading-relaxed);
 }
 
 /* ============ 粒子效果 ============ */
 
 .particles {
   position: absolute;
-  /* 兼容旧浏览器 */
   top: 0;
   right: 0;
   bottom: 0;
@@ -72,16 +97,29 @@
 
 .continueBtn {
   margin-top: var(--space-6);
-  padding: var(--space-2) var(--space-4);
+  min-height: 44px;
+  padding: var(--space-2) var(--space-5);
   font-size: var(--text-sm);
+  font-weight: var(--font-medium);
   color: var(--text-muted);
-  background: transparent;
-  border: none;
+  background: var(--glass-bg-soft);
+  border: 1px solid var(--glass-border-soft);
+  border-radius: var(--radius-full);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition:
+    color var(--transition-fast),
+    background var(--transition-fast),
+    border-color var(--transition-fast);
 }
 
 .continueBtn:hover {
   color: var(--text-light);
+  background: var(--glass-bg);
+  border-color: var(--glass-border);
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .container {
+    animation: none;
+  }
+}

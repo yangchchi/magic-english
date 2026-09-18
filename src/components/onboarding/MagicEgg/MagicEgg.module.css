@@ -20,6 +20,7 @@
   height: 300px;
   border-radius: 50%;
   pointer-events: none;
+  filter: blur(2px);
 }
 
 /* ============ 进度环 ============ */
@@ -32,12 +33,13 @@
 }
 
 .progressBg {
-  stroke: rgba(255, 255, 255, 0.1);
+  stroke: rgba(255, 255, 255, 0.12);
 }
 
 .progressFill {
   stroke: var(--color-primary);
-  filter: drop-shadow(0 0 8px var(--color-primary));
+  filter: drop-shadow(0 0 10px rgba(107, 92, 231, 0.55));
+  transition: stroke-dashoffset var(--duration-fast) var(--ease-apple);
 }
 
 /* ============ 蛋 ============ */
@@ -46,12 +48,14 @@
   position: relative;
   width: 120px;
   height: 150px;
-  background: linear-gradient(180deg, #F5F3FA 0%, #E8E4F3 50%, #D4CEE8 100%);
+  background: linear-gradient(180deg, #F8F6FC 0%, #EDE8F8 48%, #D8D0EE 100%);
   border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-  box-shadow: 
-    0 10px 30px rgba(0, 0, 0, 0.3),
-    inset 0 -10px 20px rgba(0, 0, 0, 0.1),
-    inset 0 10px 20px rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow:
+    0 16px 40px rgba(0, 0, 0, 0.28),
+    0 4px 12px rgba(107, 92, 231, 0.18),
+    inset 0 -12px 24px rgba(107, 92, 231, 0.08),
+    inset 0 12px 24px rgba(255, 255, 255, 0.85);
   overflow: hidden;
 }
 
@@ -115,7 +119,7 @@
 
 .buddyEmoji {
   font-size: 100px;
-  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.3));
+  filter: drop-shadow(0 12px 24px rgba(107, 92, 231, 0.35));
 }
 
 .sparkles {
@@ -123,19 +127,18 @@
   top: -10px;
   right: -20px;
   font-size: 32px;
-  animation: float 2s ease-in-out infinite;
+  animation: float 2.4s var(--ease-apple) infinite;
 }
 
 @keyframes float {
   0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-10px) rotate(10deg); }
+  50% { transform: translateY(-8px) rotate(8deg); }
 }
 
 /* ============ 粒子 ============ */
 
 .particles {
   position: absolute;
-  /* 兼容旧浏览器 */
   top: 0;
   right: 0;
   bottom: 0;
@@ -151,6 +154,12 @@
   height: 6px;
   background: var(--color-secondary);
   border-radius: 50%;
-  box-shadow: 0 0 10px var(--color-secondary);
+  box-shadow: 0 0 12px rgba(255, 107, 157, 0.55);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sparkles {
+    animation: none;
+  }
 }
 

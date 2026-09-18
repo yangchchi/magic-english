@@ -1,5 +1,5 @@
 /**
- * Button 组件样式
+ * Button 组件样式 — Apple HIG / Glass
  */
 
 .button {
@@ -9,14 +9,24 @@
   gap: var(--space-2);
   font-family: var(--font-display);
   font-weight: var(--font-semibold);
-  border-radius: var(--radius-xl);
+  letter-spacing: var(--tracking-tight);
+  border-radius: var(--radius-2xl);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-base),
+    background var(--transition-base),
+    opacity var(--transition-fast);
   position: relative;
   overflow: hidden;
   border: none;
   outline: none;
   white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.button:active:not(.disabled):not(.loading) {
+  transform: scale(0.97);
 }
 
 /* ============ 变体 ============ */
@@ -24,73 +34,80 @@
 .primary {
   color: var(--text-light);
   background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
-  box-shadow: var(--shadow-md), 0 0 0 0 rgba(107, 92, 231, 0);
+  box-shadow: var(--shadow-md), var(--glass-highlight);
 }
 
 .primary:hover:not(.disabled) {
-  box-shadow: var(--shadow-lg), var(--glow-primary);
+  box-shadow: var(--shadow-lg), var(--glow-primary), var(--glass-highlight);
 }
 
 .secondary {
   color: var(--text-light);
   background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-secondary-dark) 100%);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-md), var(--glass-highlight);
 }
 
 .secondary:hover:not(.disabled) {
-  box-shadow: var(--shadow-lg), var(--glow-secondary);
+  box-shadow: var(--shadow-lg), var(--glow-secondary), var(--glass-highlight);
 }
 
 .ghost {
   color: var(--text-light);
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-highlight);
 }
 
 .ghost:hover:not(.disabled) {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--glass-bg-strong);
+  border-color: rgba(255, 255, 255, 0.28);
 }
 
 .danger {
   color: var(--text-light);
   background: linear-gradient(135deg, var(--color-error) 0%, var(--color-error-dark) 100%);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-md), var(--glass-highlight);
 }
 
 .danger:hover:not(.disabled) {
-  box-shadow: var(--shadow-lg), 0 0 20px rgba(255, 87, 87, 0.4);
+  box-shadow: var(--shadow-lg), 0 0 20px rgba(255, 87, 87, 0.28), var(--glass-highlight);
 }
 
 .success {
   color: var(--text-light);
   background: linear-gradient(135deg, var(--color-success) 0%, var(--color-success-dark) 100%);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-md), var(--glass-highlight);
 }
 
 .success:hover:not(.disabled) {
-  box-shadow: var(--shadow-lg), var(--glow-success);
+  box-shadow: var(--shadow-lg), var(--glow-success), var(--glass-highlight);
 }
 
 /* ============ 尺寸 ============ */
 
 .sm {
-  height: 32px;
-  padding: 0 var(--space-3);
+  min-height: 36px;
+  height: 36px;
+  padding: 0 var(--space-4);
   font-size: var(--text-sm);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
 }
 
 .md {
+  min-height: 44px;
   height: 44px;
   padding: 0 var(--space-5);
   font-size: var(--text-base);
 }
 
 .lg {
+  min-height: 56px;
   height: 56px;
   padding: 0 var(--space-8);
   font-size: var(--text-lg);
-  border-radius: var(--radius-2xl);
+  border-radius: var(--radius-3xl);
 }
 
 /* ============ 状态 ============ */
@@ -100,7 +117,7 @@
 }
 
 .disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
   pointer-events: none;
 }
@@ -144,3 +161,16 @@
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transition: none;
+  }
+
+  .button:active:not(.disabled):not(.loading) {
+    transform: none;
+  }
+
+  .spinnerIcon {
+    animation: none;
+  }
+}

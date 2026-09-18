@@ -11,7 +11,7 @@ import { useAppStore } from '@/stores/useAppStore';
 import { QRSync, AchievementCard, MagicCard } from '@/components/incentive';
 import { BuddyAvatar } from '@/components/buddy';
 import { getBuddyState, type BuddyState, checkEvolution } from '@/services/buddyService';
-import { Button } from '@/components/common';
+import { Button, Icon } from '@/components/common';
 import { allDictionary, allRegions, type LevelNumber } from '@/data';
 import styles from './ScrollPage.module.css';
 
@@ -380,8 +380,9 @@ const ScrollPage: React.FC = () => {
     <div className={styles.container}>
       {/* 头部 */}
       <header className={styles.header}>
-        <button className={styles.backBtn} onClick={() => navigate('/map')}>
-          ← 返回
+        <button className={styles.backBtn} onClick={() => navigate('/map')} aria-label="返回">
+          <Icon name="chevron-left" size={20} strokeWidth={2.25} className={styles.backIcon} />
+          <span>返回</span>
         </button>
         <h1 className={styles.title}>📜 守护者卷轴</h1>
         <div className={styles.placeholder} />

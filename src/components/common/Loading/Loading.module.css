@@ -1,10 +1,9 @@
 /**
- * Loading 组件样式
+ * Loading 组件样式 — Apple HIG / Glass
  */
 
 .fullscreen {
   position: fixed;
-  /* 兼容旧浏览器 */
   top: 0;
   right: 0;
   bottom: 0;
@@ -12,7 +11,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: var(--bg-primary);
+  background: linear-gradient(
+    160deg,
+    var(--bg-primary) 0%,
+    var(--bg-secondary) 55%,
+    var(--bg-tertiary) 100%
+  );
   z-index: var(--z-modal);
 }
 
@@ -20,7 +24,14 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-4);
+  gap: var(--space-5);
+  padding: var(--space-8) var(--space-10);
+  background: var(--glass-bg-dark);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border-soft);
+  border-radius: var(--radius-3xl);
+  box-shadow: var(--shadow-float), var(--glass-highlight);
 }
 
 .spinner {
@@ -35,14 +46,14 @@
 }
 
 .track {
-  stroke: var(--border-dark);
+  stroke: rgba(255, 255, 255, 0.12);
 }
 
 .path {
   stroke: var(--color-primary);
   stroke-dasharray: 80, 200;
   stroke-dashoffset: 0;
-  animation: dash 1.5s ease-in-out infinite;
+  animation: dash 1.4s var(--ease-apple) infinite;
 }
 
 @keyframes dash {
@@ -63,6 +74,15 @@
 .message {
   color: var(--text-light);
   font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  letter-spacing: var(--tracking-wide);
   text-align: center;
+  opacity: 0.85;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .path {
+    animation: none;
+    stroke-dasharray: 60, 200;
+  }
+}

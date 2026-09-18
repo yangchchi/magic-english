@@ -1,10 +1,9 @@
 /**
- * CardReveal 组件样式
+ * CardReveal 组件样式 — Apple HIG / Glass
  */
 
 .overlay {
   position: fixed;
-  /* 兼容旧浏览器 */
   top: 0;
   right: 0;
   bottom: 0;
@@ -12,8 +11,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.9);
+  background: var(--bg-overlay-strong);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
   z-index: 1000;
+  animation: fadeIn var(--duration-base) var(--ease-apple);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .container {
@@ -30,9 +37,11 @@
 
 .bgGlow {
   position: absolute;
-  width: 200px;
-  height: 200px;
+  width: 240px;
+  height: 240px;
   pointer-events: none;
+  filter: blur(40px);
+  opacity: 0.55;
 }
 
 /* ============ 粒子效果 ============ */
@@ -60,58 +69,71 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  perspective: 1000px;
+  perspective: 1200px;
 }
 
 /* ============ 卡包 ============ */
 
 .cardPack {
   position: relative;
-  width: 180px;
-  height: 250px;
+  width: 188px;
+  height: 260px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: var(--space-4);
-  background: linear-gradient(135deg, #2d2d5a 0%, #1a1a3e 100%);
-  border: 3px solid var(--color-primary);
-  border-radius: var(--radius-xl);
+  background: var(--glass-bg-panel);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-3xl);
+  box-shadow: var(--shadow-2xl), var(--glow-primary), var(--glass-highlight);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition:
+    transform var(--transition-base),
+    border-color var(--transition-base),
+    box-shadow var(--transition-base);
 }
 
 .cardPack:hover {
-  transform: scale(1.05);
-  border-color: var(--color-accent);
+  transform: scale(1.03);
+  border-color: rgba(255, 224, 102, 0.45);
+  box-shadow: var(--shadow-2xl), var(--glow-accent), var(--glass-highlight);
+}
+
+.cardPack:active {
+  transform: scale(0.98);
 }
 
 .packGlow {
   position: absolute;
-  /* 兼容旧浏览器 */
-  top: -10px;
-  right: -10px;
-  bottom: -10px;
-  left: -10px;
+  top: -12px;
+  right: -12px;
+  bottom: -12px;
+  left: -12px;
   background: radial-gradient(circle at center, var(--color-primary) 0%, transparent 70%);
-  opacity: 0.3;
-  animation: packPulse 2s ease-in-out infinite;
+  opacity: 0.28;
+  animation: packPulse 2.4s var(--ease-apple) infinite;
   pointer-events: none;
+  border-radius: inherit;
 }
 
 @keyframes packPulse {
-  0%, 100% { opacity: 0.3; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(1.1); }
+  0%, 100% { opacity: 0.22; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.06); }
 }
 
 .packIcon {
   font-size: 64px;
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.25));
 }
 
 .packText {
   font-size: var(--text-sm);
   color: var(--text-muted);
   margin: 0;
+  letter-spacing: var(--tracking-wide);
 }
 
 /* ============ 卡牌包装 ============ */
@@ -124,12 +146,20 @@
 
 .info {
   position: absolute;
-  bottom: 60px;
+  bottom: 64px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: var(--space-3);
   text-align: center;
+  padding: var(--space-4) var(--space-6);
+  background: var(--glass-bg-dark);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border-soft);
+  border-radius: var(--radius-3xl);
+  box-shadow: var(--shadow-float), var(--glass-highlight);
+  max-width: min(90vw, 360px);
 }
 
 .newBadge {
@@ -137,15 +167,9 @@
   font-size: var(--text-sm);
   font-weight: var(--font-bold);
   color: var(--color-accent);
-  background: rgba(245, 158, 11, 0.2);
-  border: 1px solid var(--color-accent);
+  background: rgba(255, 224, 102, 0.16);
+  border: 1px solid rgba(255, 224, 102, 0.35);
   border-radius: var(--radius-full);
-  animation: bounce 1s ease-in-out infinite;
-}
-
-@keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-5px); }
 }
 
 .upgradeBadge {
@@ -153,20 +177,22 @@
   font-size: var(--text-sm);
   font-weight: var(--font-bold);
   color: var(--color-success);
-  background: rgba(16, 185, 129, 0.2);
-  border: 1px solid var(--color-success);
+  background: rgba(78, 205, 196, 0.16);
+  border: 1px solid rgba(78, 205, 196, 0.35);
   border-radius: var(--radius-full);
 }
 
 .rarityTitle {
   font-size: var(--text-xl);
   font-weight: var(--font-bold);
+  letter-spacing: var(--tracking-tight);
   margin: 0;
 }
 
 .cardWord {
   font-size: var(--text-2xl);
   font-weight: var(--font-bold);
+  letter-spacing: var(--tracking-tight);
   color: var(--text-light);
   margin: 0;
   text-transform: capitalize;
@@ -176,5 +202,20 @@
   font-size: var(--text-base);
   color: var(--text-muted);
   margin: 0;
+  line-height: var(--leading-relaxed);
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .overlay {
+    animation: none;
+  }
+
+  .packGlow {
+    animation: none;
+  }
+
+  .cardPack:hover,
+  .cardPack:active {
+    transform: none;
+  }
+}

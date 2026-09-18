@@ -18,17 +18,16 @@
 
 .gradient {
   position: absolute;
-  /* 兼容旧浏览器 */
   top: 0;
   right: 0;
   bottom: 0;
   left: 0;
   background: linear-gradient(
-    180deg,
-    #0a0a1a 0%,
-    #1a1a3a 30%,
-    #2a2a4a 60%,
-    #1a1a3a 100%
+    165deg,
+    #080816 0%,
+    var(--bg-tertiary) 28%,
+    #1e1a3c 58%,
+    var(--bg-secondary) 100%
   );
 }
 
@@ -36,7 +35,6 @@
 
 .stars {
   position: absolute;
-  /* 兼容旧浏览器 */
   top: 0;
   right: 0;
   bottom: 0;
@@ -52,8 +50,9 @@
   width: 140%;
   height: 50%;
   border-radius: 0 0 50% 50%;
-  filter: blur(60px);
+  filter: blur(72px);
   transform-origin: top center;
+  opacity: 0.85;
 }
 
 .aurora2 {
@@ -61,6 +60,7 @@
   left: -10%;
   width: 120%;
   height: 40%;
+  opacity: 0.7;
 }
 
 /* ============ 漂浮光球 ============ */
@@ -68,10 +68,10 @@
 .orb {
   position: absolute;
   bottom: 20%;
-  width: 100px;
-  height: 100px;
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
-  filter: blur(40px);
-  opacity: 0.6;
+  filter: blur(48px);
+  opacity: 0.55;
 }
 
