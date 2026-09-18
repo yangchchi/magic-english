@@ -3,7 +3,7 @@
  * Quiz 练习容器，管理题目流程和状态
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { QuizItem } from '@/db';
 import { QuizProgress } from '../QuizProgress';
@@ -58,12 +58,18 @@ export const QuizContainer: React.FC<QuizContainerProps> = ({
   const [answers, setAnswers] = useState<QuizResultData['answers']>([]);
   const [hintsUsed, setHintsUsed] = useState(0);
 
+  // 防止 continue 重入导致 index 越过 questions.length
+  const isAdvancingRef = useRef(false);
+
   const currentQuestion = questions[currentIndex];
-  const progress = ((currentIndex) / questions.length) * 100;
+  const safeIndex = Math.min(currentIndex, Math.max(questions.length - 1, 0));
+  const progress = questions.length > 0
+    ? (Math.min(currentIndex, questions.length) / questions.length) * 100
+    : 0;
 
   // 提交答案
   const handleAnswer = useCallback((userAnswer: string | string[]) => {
-    if (!currentQuestion) return;
+    if (!currentQuestion || quizState !== 'playing') return;
     const correct = checkAnswer(currentQuestion, userAnswer);
     setIsCorrect(correct);
     setAnswers(prev => [...prev, {
@@ -71,8 +77,9 @@ export const QuizContainer: React.FC<QuizContainerProps> = ({
       isCorrect: correct,
       userAnswer,
     }]);
+    isAdvancingRef.current = false;
     setQuizState('feedback');
-  }, [currentQuestion]);
+  }, [currentQuestion, quizState]);
 
   // 检查答案
   const checkAnswer = (question: QuizItem, answer: string | string[]): boolean => {
@@ -86,16 +93,27 @@ export const QuizContainer: React.FC<QuizContainerProps> = ({
     return answer === question.correctAnswer;
   };
 
-  // 继续下一题
+  // 继续下一题（幂等：同一次反馈只推进一次）
   const handleContinue = useCallback(() => {
-    if (currentIndex < questions.length - 1) {
-      setCurrentIndex(prev => prev + 1);
+    if (isAdvancingRef.current) return;
+    isAdvancingRef.current = true;
+
+    setCurrentIndex(prev => {
+      if (prev >= questions.length - 1) {
+        setQuizState('result');
+        return prev;
+      }
       setQuizState('playing');
-    } else {
-      // 完成所有题目
+      return prev + 1;
+    });
+  }, [questions.length]);
+
+  // 越界兜底：无题可渲染时直接进入结果
+  useEffect(() => {
+    if (quizState === 'playing' && questions.length > 0 && !questions[currentIndex]) {
       setQuizState('result');
     }
-  }, [currentIndex, questions.length]);
+  }, [quizState, questions, currentIndex]);
 
   // 使用提示
   const handleHint = useCallback(() => {
@@ -106,7 +124,9 @@ export const QuizContainer: React.FC<QuizContainerProps> = ({
   const calculateResult = useCallback((): QuizResultData => {
     const correctCount = answers.filter(a => a.isCorrect).length;
     const wrongCount = answers.length - correctCount;
-    const score = Math.round((correctCount / questions.length) * 100);
+    const score = questions.length > 0
+      ? Math.round((correctCount / questions.length) * 100)
+      : 0;
     const timeSpent = Math.round((Date.now() - startTime) / 1000);
     
     // 魔力值计算：每题正确 +3，错误 0，提示 -5
@@ -158,7 +178,7 @@ export const QuizContainer: React.FC<QuizContainerProps> = ({
       {/* 进度条 */}
       {quizState !== 'result' && (
         <QuizProgress
-          current={currentIndex + 1}
+          current={safeIndex + 1}
           total={questions.length}
           progress={progress}
           onExit={onExit}
@@ -207,6 +227,7 @@ export const QuizContainer: React.FC<QuizContainerProps> = ({
               result={calculateResult()}
               onFinish={handleFinish}
               onRetry={() => {
+                isAdvancingRef.current = false;
                 setCurrentIndex(0);
                 setAnswers([]);
                 setHintsUsed(0);
@@ -221,4 +242,3 @@ export const QuizContainer: React.FC<QuizContainerProps> = ({
 };
 
 export default QuizContainer;
-

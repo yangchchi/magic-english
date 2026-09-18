@@ -158,6 +158,96 @@ export const mergeNodeStates = (
 };
 
 /**
+ * 检测 DB 节点 ID 是否与统一地图对齐。
+ * 旧版 dataInit 使用 node_l1_001，统一地图使用 node_l1_01，重叠为 0。
+ */
+export const mapNodeIdsAligned = (
+  unifiedNodes: UnifiedMapNode[],
+  dbNodes: MapNode[]
+): boolean => {
+  if (dbNodes.length === 0) return false;
+  const unifiedIds = new Set(unifiedNodes.map(n => n.id));
+  const matched = dbNodes.filter(n => unifiedIds.has(n.id)).length;
+  return matched >= Math.min(dbNodes.length, unifiedNodes.length) * 0.5;
+};
+
+/**
+ * 按已完成节点重算解锁状态（前置全部完成则解锁）
+ */
+const recomputeUnlocked = (nodes: UnifiedMapNode[]): UnifiedMapNode[] => {
+  const completedIds = new Set(nodes.filter(n => n.completed).map(n => n.id));
+
+  return nodes.map(node => {
+    const prereqs = node.prerequisites ?? [];
+    const unlocked =
+      Boolean(node.completed) ||
+      prereqs.length === 0 ||
+      prereqs.every(id => completedIds.has(id));
+
+    return { ...node, unlocked };
+  });
+};
+
+/**
+ * 合并 DB 进度到统一地图；ID 不对齐时按 storyId 迁移，并重算解锁链。
+ * needsSync=true 时调用方应将 dbPayload 写回 IndexedDB。
+ */
+export const reconcileMapNodeStates = (
+  unifiedNodes: UnifiedMapNode[],
+  dbNodes: MapNode[]
+): {
+  nodes: UnifiedMapNode[];
+  needsSync: boolean;
+  dbPayload: MapNode[];
+} => {
+  const needsSync = !mapNodeIdsAligned(unifiedNodes, dbNodes);
+  const dbById = new Map(dbNodes.map(n => [n.id, n]));
+  const completedByStoryId = new Set(
+    dbNodes.filter(n => n.completed && n.storyId).map(n => n.storyId as string)
+  );
+
+  let merged: UnifiedMapNode[];
+
+  if (!needsSync) {
+    merged = mergeNodeStates(unifiedNodes, dbNodes);
+  } else {
+    merged = unifiedNodes.map(node => {
+      const byId = dbById.get(node.id);
+      const completed =
+        byId?.completed ??
+        (node.storyId ? completedByStoryId.has(node.storyId) : false) ??
+        node.completed ??
+        false;
+
+      return {
+        ...node,
+        completed: Boolean(completed),
+        unlocked: false,
+      };
+    });
+  }
+
+  const nodes = recomputeUnlocked(merged);
+
+  const dbPayload: MapNode[] = nodes.map(node => ({
+    id: node.id,
+    regionId: node.regionId,
+    type: node.type,
+    storyId: node.storyId,
+    position: node.position,
+    prerequisites: node.prerequisites,
+    rewards: node.rewards,
+    unlocked: node.unlocked,
+    completed: node.completed,
+    title: node.title,
+    titleCn: node.titleCn,
+    emoji: node.emoji,
+  }));
+
+  return { nodes, needsSync: needsSync || dbNodes.length === 0, dbPayload };
+};
+
+/**
  * 找到当前活跃节点（第一个未完成的已解锁节点）
  */
 export const findActiveNode = (nodes: UnifiedMapNode[]): UnifiedMapNode | null => {
@@ -255,6 +345,8 @@ export const getTotalProgress = (nodes: UnifiedMapNode[]) => {
 export default {
   generateUnifiedMapData,
   mergeNodeStates,
+  reconcileMapNodeStates,
+  mapNodeIdsAligned,
   findActiveNode,
   calculateNodePosition,
   getNodeVisualConfig,

@@ -11,6 +11,7 @@ import Dexie, { type Table } from 'dexie';
 export interface UserSettings {
   language: 'zh-CN' | 'en-US';
   ttsSpeed: 0.8 | 1.0 | 1.2;
+  ttsTeacher: 'female' | 'male';
   soundEnabled: boolean;
   vibrationEnabled: boolean;
   autoPlayTTS: boolean;
@@ -289,6 +290,7 @@ export const getTodayString = (): string => {
 export const createDefaultSettings = (): UserSettings => ({
   language: 'zh-CN',
   ttsSpeed: 1.0,
+  ttsTeacher: 'female',
   soundEnabled: true,
   vibrationEnabled: true,
   autoPlayTTS: true,

@@ -166,12 +166,65 @@ describe('TTSService', () => {
     });
   });
 
-  describe('getRecommendedVoice', () => {
-    it('应该返回推荐语音或 null', () => {
-      const voice = ttsService.getRecommendedVoice();
-      
-      // 可能返回语音对象或 null
-      expect(voice === null || typeof voice === 'object').toBe(true);
+  describe('老师音色', () => {
+    const makeVoice = (name: string, lang = 'en-US', localService = true) =>
+      ({ name, lang, localService, default: false, voiceURI: name }) as SpeechSynthesisVoice;
+
+    it('女老师应优先匹配列表中的亲和女声', () => {
+      vi.spyOn(window.speechSynthesis, 'getVoices').mockReturnValue([
+        makeVoice('Microsoft David'),
+        makeVoice('Allison'),
+        makeVoice('Aaron'),
+      ]);
+
+      ttsService.setTeacher('female');
+      expect(ttsService.getRecommendedVoice()?.name).toBe('Allison');
+    });
+
+    it('男老师应优先匹配列表中的男声', () => {
+      vi.spyOn(window.speechSynthesis, 'getVoices').mockReturnValue([
+        makeVoice('Allison'),
+        makeVoice('Aaron'),
+        makeVoice('Microsoft Zira'),
+      ]);
+
+      ttsService.setTeacher('male');
+      expect(ttsService.getRecommendedVoice()?.name).toBe('Aaron');
+    });
+
+    it('首选不可用时男女应回退到不同性别音色', () => {
+      vi.spyOn(window.speechSynthesis, 'getVoices').mockReturnValue([
+        makeVoice('Google US English'), // 默认常被误用的尖锐女声
+        makeVoice('Samantha'),
+        makeVoice('Alex'),
+        makeVoice('Microsoft Zira'),
+      ]);
+
+      ttsService.setTeacher('female');
+      const female = ttsService.getRecommendedVoice()?.name;
+      ttsService.setTeacher('male');
+      const male = ttsService.getRecommendedVoice()?.name;
+
+      expect(female).toBe('Samantha');
+      expect(male).toBe('Alex');
+      expect(female).not.toBe(male);
+    });
+
+    it('男老师匹配 male 时不应误选 Female 音色', () => {
+      vi.spyOn(window.speechSynthesis, 'getVoices').mockReturnValue([
+        makeVoice('Google UK English Female', 'en-GB'),
+        makeVoice('Google UK English Male', 'en-GB'),
+      ]);
+
+      ttsService.setTeacher('male');
+      expect(ttsService.getRecommendedVoice()?.name).toBe('Google UK English Male');
+    });
+
+    it('setTeacher / getTeacher 应读写当前老师', () => {
+      ttsService.setTeacher('male');
+      expect(ttsService.getTeacher()).toBe('male');
+      ttsService.setTeacher('female');
+      expect(ttsService.getTeacher()).toBe('female');
     });
   });
 });

@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore, useSettings } from '@/stores/useAppStore';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { InstallPrompt, Icon } from '@/components/common';
+import { ttsService, type TTSTeacher } from '@/services/ttsService';
 import { db } from '@/db';
 import styles from './SettingsPage.module.css';
 
@@ -64,6 +65,34 @@ const SpeedSelector: React.FC<SpeedSelectorProps> = ({ value, onChange }) => {
         { value: 0.8, label: '慢' },
         { value: 1.0, label: '正常' },
         { value: 1.2, label: '快' },
+    ];
+
+    return (
+        <div className={styles.speedSelector}>
+            {options.map((option) => (
+                <button
+                    key={option.value}
+                    className={`${styles.speedOption} ${value === option.value ? styles.speedOptionActive : ''}`}
+                    onClick={() => onChange(option.value)}
+                    type="button"
+                >
+                    {option.label}
+                </button>
+            ))}
+        </div>
+    );
+};
+
+// 老师音色选择
+interface TeacherSelectorProps {
+    value: TTSTeacher;
+    onChange: (value: TTSTeacher) => void;
+}
+
+const TeacherSelector: React.FC<TeacherSelectorProps> = ({ value, onChange }) => {
+    const options: Array<{ value: TTSTeacher; label: string }> = [
+        { value: 'female', label: '女老师' },
+        { value: 'male', label: '男老师' },
     ];
 
     return (
@@ -163,6 +192,17 @@ const SettingsPage: React.FC = () => {
     const handleSpeedChange = useCallback(
         (speed: 0.8 | 1.0 | 1.2) => {
             updateSettings({ ttsSpeed: speed });
+            ttsService.setRate(speed);
+        },
+        [updateSettings]
+    );
+
+    const handleTeacherChange = useCallback(
+        (teacher: TTSTeacher) => {
+            updateSettings({ ttsTeacher: teacher });
+            ttsService.setTeacher(teacher);
+            // 试听当前老师音色
+            void ttsService.speakWord('Hello');
         },
         [updateSettings]
     );
@@ -241,6 +281,16 @@ const SettingsPage: React.FC = () => {
                         </SettingItem>
                         <SettingItem icon="⏱️" title="朗读语速" description="调整语音播放速度">
                             <SpeedSelector value={settings.ttsSpeed} onChange={handleSpeedChange} />
+                        </SettingItem>
+                        <SettingItem
+                            icon="👩‍🏫"
+                            title="老师声音"
+                            description="女老师偏柔和，男老师偏低沉"
+                        >
+                            <TeacherSelector
+                                value={settings.ttsTeacher ?? 'female'}
+                                onChange={handleTeacherChange}
+                            />
                         </SettingItem>
                     </div>
                 </section>

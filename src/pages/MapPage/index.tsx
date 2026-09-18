@@ -10,7 +10,7 @@ import { db } from '@/db';
 import { getStoryById } from '@/data';
 import {
   generateUnifiedMapData,
-  mergeNodeStates,
+  reconcileMapNodeStates,
   type UnifiedMapNode,
 } from '@/data/unifiedMap';
 import { HorizontalMap, FloatingHeader } from './components';
@@ -26,14 +26,12 @@ const MapPage: React.FC = () => {
   const [selectedNode, setSelectedNode] = useState<UnifiedMapNode | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-  // 加载节点数据
+  // 加载节点数据（与 HorizontalMap 同源 reconcile，保证 Header 进度一致）
   useEffect(() => {
     const loadNodes = async () => {
       const mapData = generateUnifiedMapData();
       const dbNodes = await db.mapNodes.toArray();
-      const mergedNodes = dbNodes.length > 0
-        ? mergeNodeStates(mapData.nodes, dbNodes)
-        : mapData.nodes;
+      const { nodes: mergedNodes } = reconcileMapNodeStates(mapData.nodes, dbNodes);
       setNodes(mergedNodes);
     };
     loadNodes();

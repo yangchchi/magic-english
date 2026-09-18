@@ -3,7 +3,7 @@
  * 正确/错误反馈动画
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import styles from './QuizFeedback.module.css';
 
@@ -18,11 +18,19 @@ export const QuizFeedback: React.FC<QuizFeedbackProps> = ({
   correctAnswer,
   onContinue,
 }) => {
-  // 自动继续
-  useEffect(() => {
-    const timer = setTimeout(onContinue, 2000);
-    return () => clearTimeout(timer);
+  // 防止「点击继续」与 2s 自动继续同时触发导致题号越界
+  const hasContinuedRef = useRef(false);
+
+  const continueOnce = useCallback(() => {
+    if (hasContinuedRef.current) return;
+    hasContinuedRef.current = true;
+    onContinue();
   }, [onContinue]);
+
+  useEffect(() => {
+    const timer = setTimeout(continueOnce, 2000);
+    return () => clearTimeout(timer);
+  }, [continueOnce]);
 
   return (
     <motion.div
@@ -96,7 +104,7 @@ export const QuizFeedback: React.FC<QuizFeedbackProps> = ({
       {/* 点击继续 */}
       <motion.button
         className={styles.continueBtn}
-        onClick={onContinue}
+        onClick={continueOnce}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
@@ -108,4 +116,3 @@ export const QuizFeedback: React.FC<QuizFeedbackProps> = ({
 };
 
 export default QuizFeedback;
-

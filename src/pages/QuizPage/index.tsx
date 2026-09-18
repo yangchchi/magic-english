@@ -5,6 +5,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { db, type QuizItem } from '@/db';
+import { getStoryById } from '@/data';
 import { QuizContainer, type QuizResultData } from '@/components/quiz';
 import { Loading } from '@/components/common';
 import { useAppStore } from '@/stores/useAppStore';
@@ -72,23 +73,25 @@ const QuizPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [questions, setQuestions] = useState<QuizItem[]>([]);
 
-  // 加载题目
+  // 加载题目（优先源数据，避免 IndexedDB 旧 quiz 路径残留）
   useEffect(() => {
     const loadQuestions = async () => {
       setLoading(true);
       try {
-        // 尝试从数据库加载题目
         if (storyId) {
+          const sourceStory = getStoryById(storyId);
+          if (sourceStory?.quiz && sourceStory.quiz.length > 0) {
+            setQuestions(sourceStory.quiz);
+            return;
+          }
+
           const story = await db.stories.get(storyId);
           if (story?.quiz && story.quiz.length > 0) {
             setQuestions(story.quiz);
-          } else {
-            // 使用示例题目
-            setQuestions(sampleQuestions);
+            return;
           }
-        } else {
-          setQuestions(sampleQuestions);
         }
+        setQuestions(sampleQuestions);
       } catch (error) {
         console.error('Failed to load questions:', error);
         setQuestions(sampleQuestions);

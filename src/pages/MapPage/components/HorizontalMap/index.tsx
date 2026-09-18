@@ -8,7 +8,7 @@ import { motion, AnimatePresence, useMotionValue, animate } from 'framer-motion'
 import { db } from '@/db';
 import {
   generateUnifiedMapData,
-  mergeNodeStates,
+  reconcileMapNodeStates,
   findActiveNode,
   getNodesByLevel,
   getLevelProgress,
@@ -135,35 +135,24 @@ const HorizontalMap: React.FC<HorizontalMapProps> = ({ onNodeClick }) => {
   // 滑动提示
   const { showHint, hideHint } = useSwipeHint();
 
-  // 加载地图数据
+  // 加载地图数据（含旧版 node_l1_001 → node_l1_01 进度迁移）
   useEffect(() => {
     const loadMapData = async () => {
       setLoading(true);
       try {
         const mapData = generateUnifiedMapData();
         const dbNodes = await db.mapNodes.toArray();
-        
-        if (dbNodes.length === 0) {
-          const initialNodes = mapData.nodes.map(node => ({
-            id: node.id,
-            regionId: node.regionId,
-            type: node.type,
-            storyId: node.storyId,
-            position: node.position,
-            prerequisites: node.prerequisites,
-            rewards: node.rewards,
-            unlocked: node.unlocked,
-            completed: node.completed,
-            title: node.title,
-            titleCn: node.titleCn,
-            emoji: node.emoji,
-          }));
-          await db.mapNodes.bulkPut(initialNodes);
+        const { nodes: mergedNodes, needsSync, dbPayload } = reconcileMapNodeStates(
+          mapData.nodes,
+          dbNodes
+        );
+
+        if (needsSync) {
+          await db.transaction('rw', db.mapNodes, async () => {
+            await db.mapNodes.clear();
+            await db.mapNodes.bulkPut(dbPayload);
+          });
         }
-        
-        const mergedNodes = dbNodes.length > 0
-          ? mergeNodeStates(mapData.nodes, dbNodes)
-          : mapData.nodes;
         
         setNodes(mergedNodes);
         setSections(mapData.sections);

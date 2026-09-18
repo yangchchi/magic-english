@@ -5,7 +5,8 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import type { QuizItem } from '@/db';
+import type { QuizItem, QuizOption } from '@/db';
+import { ttsService } from '@/services/ttsService';
 import styles from './ImageChoice.module.css';
 
 interface ImageChoiceProps {
@@ -13,6 +14,41 @@ interface ImageChoiceProps {
   onAnswer: (answer: string) => void;
   onHint: () => void;
 }
+
+/** 判断是否为图片资源路径（而非 emoji） */
+export const isImageUrl = (value: string): boolean =>
+  /^(https?:\/\/|\/|data:image\/)/i.test(value) ||
+  /\.(webp|png|jpe?g|gif|svg)(\?|$)/i.test(value);
+
+const OptionVisual: React.FC<{ option: QuizOption }> = ({ option }) => {
+  const [imageFailed, setImageFailed] = useState(false);
+  const image = option.image;
+  const fallbackLabel = option.text || option.value;
+
+  if (image && isImageUrl(image) && !imageFailed) {
+    return (
+      <div className={styles.optionImage}>
+        <img
+          className={styles.optionImg}
+          src={image}
+          alt={fallbackLabel}
+          loading="lazy"
+          onError={() => setImageFailed(true)}
+        />
+      </div>
+    );
+  }
+
+  if (image && !isImageUrl(image)) {
+    return (
+      <div className={styles.optionImage}>
+        <span className={styles.emoji}>{image}</span>
+      </div>
+    );
+  }
+
+  return <div className={styles.optionText}>{fallbackLabel}</div>;
+};
 
 export const ImageChoice: React.FC<ImageChoiceProps> = ({
   question,
@@ -22,18 +58,60 @@ export const ImageChoice: React.FC<ImageChoiceProps> = ({
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  // 播放音频
+  // 判断 audioQuestion 是否为可播放的音频文件路径
+  const isAudioUrl = (value: string) =>
+    /\.(mp3|wav|ogg|m4a)(\?|$)/i.test(value) || value.startsWith('/assets/audio');
+
+  /**
+   * 播放听音内容。
+   * 注意：Chrome 要求 speechSynthesis 在用户手势的同步调用栈内触发。
+   * 因此不能先 await 音频文件再 TTS——文件缺失时会丢掉手势导致“点击无声”。
+   */
   const playAudio = useCallback(() => {
-    if (question.audioQuestion && typeof window !== 'undefined' && window.speechSynthesis) {
+    if (typeof window === 'undefined') return;
+
+    const text = question.question;
+    if (!text || !ttsService.isSupported()) return;
+
+    const audioSrc = question.audioQuestion;
+    // 仅当明确是音频 URL 时尝试文件；失败不阻塞，TTS 必须同步启动
+    if (audioSrc && isAudioUrl(audioSrc)) {
       setIsPlaying(true);
-      // 使用 Web Speech API 播放音频
-      const utterance = new SpeechSynthesisUtterance(question.question);
-      utterance.lang = 'en-US';
-      utterance.rate = 0.8;
-      utterance.onend = () => setIsPlaying(false);
-      utterance.onerror = () => setIsPlaying(false);
-      window.speechSynthesis.speak(utterance);
+      let audioOk = false;
+      const audio = new Audio(audioSrc);
+
+      // 同步启动 TTS（保留用户手势）；若音频真正开始播放再打断 TTS
+      const ttsPromise = ttsService.speak(text).catch(() => undefined);
+
+      audio.onplaying = () => {
+        audioOk = true;
+        ttsService.stop();
+        setIsPlaying(true);
+      };
+      audio.onended = () => setIsPlaying(false);
+      audio.onerror = () => {
+        // 交给已启动的 TTS
+        void ttsPromise.finally(() => {
+          if (!audioOk) setIsPlaying(false);
+        });
+      };
+      void audio.play().catch(() => {
+        void ttsPromise.finally(() => {
+          if (!audioOk) setIsPlaying(false);
+        });
+      });
+
+      void ttsPromise.finally(() => {
+        if (!audioOk) setIsPlaying(false);
+      });
+      return;
     }
+
+    setIsPlaying(true);
+    void ttsService
+      .speak(text)
+      .catch(() => undefined)
+      .finally(() => setIsPlaying(false));
   }, [question]);
 
   // 自动播放
@@ -41,6 +119,11 @@ export const ImageChoice: React.FC<ImageChoiceProps> = ({
     const timer = setTimeout(playAudio, 500);
     return () => clearTimeout(timer);
   }, [playAudio]);
+
+  // 换题时重置选中态
+  useEffect(() => {
+    setSelectedOption(null);
+  }, [question.id]);
 
   // 选择选项
   const handleSelect = useCallback((value: string) => {
@@ -76,7 +159,7 @@ export const ImageChoice: React.FC<ImageChoiceProps> = ({
           className={`${styles.playBtn} ${isPlaying ? styles.playing : ''}`}
           onClick={playAudio}
           whileTap={{ scale: 0.95 }}
-          disabled={isPlaying}
+          aria-label={isPlaying ? '播放中' : '点击听音'}
         >
           <span className={styles.playIcon}>{isPlaying ? '🔊' : '🔈'}</span>
           <span className={styles.playText}>
@@ -98,15 +181,7 @@ export const ImageChoice: React.FC<ImageChoiceProps> = ({
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            {option.image ? (
-              <div className={styles.optionImage}>
-                <span className={styles.emoji}>{option.image}</span>
-              </div>
-            ) : (
-              <div className={styles.optionText}>
-                {option.text}
-              </div>
-            )}
+            <OptionVisual option={option} />
           </motion.button>
         ))}
       </div>
@@ -132,4 +207,3 @@ export const ImageChoice: React.FC<ImageChoiceProps> = ({
 };
 
 export default ImageChoice;
-

@@ -4,6 +4,53 @@
  * 支持单词级别高亮同步、语速控制、暂停/恢复
  */
 
+/** 老师音色：二选一 */
+export type TTSTeacher = 'female' | 'male';
+
+/**
+ * 按性别匹配系统音色（名称包含匹配，按优先级取第一个可用的）
+ * UI 仍是二选一；这里只是设备音色缺失时的回退链
+ */
+export const TEACHER_VOICE_PRIORITY: Record<TTSTeacher, readonly string[]> = {
+  female: [
+    'allison', // 相对柔和，减少尖锐感
+    'susan',
+    'serena',
+    'samantha',
+    'victoria',
+    'ava',
+    'tessa',
+    'martha',
+    'moira',
+    'karen',
+    'flo',
+    'microsoft jenny',
+    'microsoft aria',
+    'zira',
+    'google uk english female',
+    'female',
+  ],
+  male: [
+    'aaron',
+    'alex',
+    'daniel',
+    'microsoft guy',
+    'microsoft david',
+    'microsoft mark',
+    'fred',
+    'tom',
+    'nathan',
+    'google uk english male',
+    'male',
+  ],
+};
+
+/** @deprecated 兼容旧引用：取各性别首选名 */
+export const TEACHER_VOICE_NAME: Record<TTSTeacher, string> = {
+  female: TEACHER_VOICE_PRIORITY.female[0]!,
+  male: TEACHER_VOICE_PRIORITY.male[0]!,
+};
+
 type TTSEventCallback = (event: TTSEvent) => void;
 
 interface TTSEvent {
@@ -20,6 +67,7 @@ interface TTSOptions {
   volume?: number; // 音量 0-1，默认 1
   lang?: string; // 语言，默认 'en-US'
   voice?: string; // 指定语音名称
+  teacher?: TTSTeacher; // 男/女老师
 }
 
 interface WordBoundary {
@@ -43,6 +91,7 @@ class TTSService {
     pitch: 1,
     volume: 1,
     lang: 'en-US',
+    teacher: 'female',
   };
 
   constructor() {
@@ -74,19 +123,79 @@ class TTSService {
   }
 
   /**
-   * 获取推荐的语音
+   * 设置男/女老师
+   */
+  setTeacher(teacher: TTSTeacher): void {
+    this.options.teacher = teacher;
+  }
+
+  /**
+   * 获取当前老师
+   */
+  getTeacher(): TTSTeacher {
+    return this.options.teacher || 'female';
+  }
+
+  /**
+   * 音色名是否匹配候选关键字
+   * 注意：不能用 includes('male')，否则会误匹配 "Female"
+   */
+  private voiceNameMatches(voiceName: string, candidate: string): boolean {
+    const name = voiceName.toLowerCase();
+    const key = candidate.toLowerCase();
+
+    if (key === 'male') {
+      return /\bmale\b/.test(name) && !/\bfemale\b/.test(name);
+    }
+    if (key === 'female') {
+      return /\bfemale\b/.test(name);
+    }
+
+    return name.includes(key);
+  }
+
+  /**
+   * 按老师性别从优先级列表中解析音色
    */
   getRecommendedVoice(): SpeechSynthesisVoice | null {
+    this.loadVoices();
     const englishVoices = this.getEnglishVoices();
+    if (englishVoices.length === 0) return null;
 
-    // 优先选择：1. 本地高质量语音 2. 美式英语 3. 任意英语
-    const localVoice = englishVoices.find(v => v.localService && v.lang === 'en-US');
-    if (localVoice) return localVoice;
+    const teacher = this.getTeacher();
+    const priority = TEACHER_VOICE_PRIORITY[teacher];
 
-    const usVoice = englishVoices.find(v => v.lang === 'en-US');
-    if (usVoice) return usVoice;
+    for (const candidate of priority) {
+      const matched = englishVoices.find(v => this.voiceNameMatches(v.name, candidate));
+      if (matched) return matched;
+    }
 
-    return englishVoices[0] || null;
+    // 最后回退：尽量避开明显的异性音色
+    const oppositeHints =
+      teacher === 'female'
+        ? ['aaron', 'alex', 'daniel', 'david', 'guy', 'fred', 'tom', 'male']
+        : ['allison', 'ava', 'samantha', 'zira', 'jenny', 'aria', 'susan', 'female'];
+
+    const fallback = englishVoices.find(v => {
+      const name = v.name.toLowerCase();
+      return !oppositeHints.some(hint =>
+        hint === 'male' || hint === 'female'
+          ? this.voiceNameMatches(v.name, hint)
+          : name.includes(hint)
+      );
+    });
+
+    return fallback || englishVoices[0] || null;
+  }
+
+  /**
+   * 老师音色对应的音调：男声略低、女声略柔，减少尖锐感并拉开差异
+   */
+  private getTeacherPitch(): number {
+    if (this.options.pitch !== undefined && this.options.pitch !== 1) {
+      return this.options.pitch;
+    }
+    return this.getTeacher() === 'male' ? 0.85 : 0.95;
   }
 
   /**
@@ -192,7 +301,7 @@ class TTSService {
 
       // 应用选项
       this.utterance.rate = this.options.rate || 1;
-      this.utterance.pitch = this.options.pitch || 1;
+      this.utterance.pitch = this.getTeacherPitch();
       this.utterance.volume = this.options.volume || 1;
       this.utterance.lang = this.options.lang || 'en-US';
 
@@ -261,7 +370,7 @@ class TTSService {
 
       const utterance = new SpeechSynthesisUtterance(word);
       utterance.rate = (this.options.rate || 1) * 0.9; // 单词稍慢
-      utterance.pitch = this.options.pitch || 1;
+      utterance.pitch = this.getTeacherPitch();
       utterance.volume = this.options.volume || 1;
       utterance.lang = this.options.lang || 'en-US';
 

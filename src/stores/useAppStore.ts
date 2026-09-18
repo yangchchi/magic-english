@@ -12,6 +12,8 @@ import { immer } from 'zustand/middleware/immer';
 /** 应用设置 */
 interface AppSettings {
   ttsSpeed: 0.8 | 1.0 | 1.2;
+  /** 朗读老师：女老师 Ava / 男老师 Aaron */
+  ttsTeacher: 'female' | 'male';
   soundEnabled: boolean;
   vibrationEnabled: boolean;
   autoPlayTTS: boolean;
@@ -90,6 +92,7 @@ interface AppActions {
 
 const defaultSettings: AppSettings = {
   ttsSpeed: 1.0,
+  ttsTeacher: 'female',
   soundEnabled: true,
   vibrationEnabled: true,
   autoPlayTTS: true,
@@ -248,6 +251,9 @@ export const useSettings = () => useAppStore((state) => state.settings);
 
 /** 获取 TTS 语速 */
 export const useTTSSpeed = () => useAppStore((state) => state.settings.ttsSpeed);
+
+/** 获取 TTS 老师音色 */
+export const useTTSTeacher = () => useAppStore((state) => state.settings.ttsTeacher);
 
 /** 获取是否离线 */
 export const useIsOffline = () => useAppStore((state) => state.isOffline);

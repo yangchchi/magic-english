@@ -14,7 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { db } from '@/db';
 import {
   generateUnifiedMapData,
-  mergeNodeStates,
+  reconcileMapNodeStates,
   findActiveNode,
   getLevelProgress,
   type UnifiedMapNode,
@@ -40,41 +40,24 @@ const UnifiedMap: React.FC<UnifiedMapProps> = ({ onNodeClick, loading: externalL
   const [loading, setLoading] = useState(true);
   const [hasScrolledToActive, setHasScrolledToActive] = useState(false);
 
-  // 生成并加载地图数据
+  // 生成并加载地图数据（含旧版 ID 迁移）
   useEffect(() => {
     const loadMapData = async () => {
       setLoading(true);
       try {
-        // 生成统一地图数据
         const mapData = generateUnifiedMapData();
-        
-        // 从数据库获取节点状态
         const dbNodes = await db.mapNodes.toArray();
-        
-        // 如果数据库为空，初始化节点状态
-        if (dbNodes.length === 0) {
-          // 保存初始状态到数据库
-          const initialNodes = mapData.nodes.map(node => ({
-            id: node.id,
-            regionId: node.regionId,
-            type: node.type,
-            storyId: node.storyId,
-            position: node.position,
-            prerequisites: node.prerequisites,
-            rewards: node.rewards,
-            unlocked: node.unlocked,
-            completed: node.completed,
-            title: node.title,
-            titleCn: node.titleCn,
-            emoji: node.emoji,
-          }));
-          await db.mapNodes.bulkPut(initialNodes);
+        const { nodes: mergedNodes, needsSync, dbPayload } = reconcileMapNodeStates(
+          mapData.nodes,
+          dbNodes
+        );
+
+        if (needsSync) {
+          await db.transaction('rw', db.mapNodes, async () => {
+            await db.mapNodes.clear();
+            await db.mapNodes.bulkPut(dbPayload);
+          });
         }
-        
-        // 合并数据库状态
-        const mergedNodes = dbNodes.length > 0 
-          ? mergeNodeStates(mapData.nodes, dbNodes)
-          : mapData.nodes;
         
         setNodes(mergedNodes);
         setSections(mapData.sections);
@@ -90,7 +73,7 @@ const UnifiedMap: React.FC<UnifiedMapProps> = ({ onNodeClick, loading: externalL
         setLoading(false);
       }
     };
-
+    
     loadMapData();
   }, []);
 

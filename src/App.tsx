@@ -7,9 +7,12 @@ import React, { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useAppStore } from '@/stores/useAppStore';
 import { InstallPrompt } from '@/components/common';
+import { ttsService } from '@/services/ttsService';
 
 const App: React.FC = () => {
   const setOffline = useAppStore((state) => state.setOffline);
+  const ttsSpeed = useAppStore((state) => state.settings.ttsSpeed);
+  const ttsTeacher = useAppStore((state) => state.settings.ttsTeacher);
 
   // 监听网络状态变化
   useEffect(() => {
@@ -24,6 +27,12 @@ const App: React.FC = () => {
       window.removeEventListener('offline', handleOffline);
     };
   }, [setOffline]);
+
+  // 同步朗读设置到 TTS 服务
+  useEffect(() => {
+    ttsService.setRate(ttsSpeed);
+    ttsService.setTeacher(ttsTeacher ?? 'female');
+  }, [ttsSpeed, ttsTeacher]);
 
   return (
     <>

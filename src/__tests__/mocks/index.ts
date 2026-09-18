@@ -17,6 +17,7 @@ export const mockUser = {
   settings: {
     language: 'zh-CN' as const,
     ttsSpeed: 1.0 as const,
+    ttsTeacher: 'female' as const,
     soundEnabled: true,
     vibrationEnabled: true,
     autoPlayTTS: true,
